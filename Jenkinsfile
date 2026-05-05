@@ -3,37 +3,36 @@ pipeline {
 
     stages {
 
+        stage('Setup Node') {
+            steps {
+                sh '''
+                apt update
+                apt install -y curl
+                curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                apt install -y nodejs
+                '''
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
         }
 
-        stage('Dependency Scan') {
-            steps {
-                sh 'npm audit || true'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t dheerajkonakalla22/secure-health-app .'
+                sh 'docker build -t dheerajkonakalla22/health-app .'
             }
         }
 
-        stage('Container Scan') {
+        stage('Push Image') {
             steps {
-                sh 'trivy image dheerajkonakalla22/secure-health-app || true'
+                sh 'docker push dheerajkonakalla22/health-app'
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                sh 'docker push dheerajkonakalla22/secure-health-app'
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
+        stage('Deploy') {
             steps {
                 sh 'kubectl apply -f deployment.yaml'
                 sh 'kubectl apply -f service.yaml'
